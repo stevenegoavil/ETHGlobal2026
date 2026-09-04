@@ -34,14 +34,6 @@ The original plan assumed cross-chain liquidity data would come via LI.FI as spo
 - **Uniswap Foundation** ($5,000) — confirmed sponsor, but requires a real integration point on the Uniswap stack (API, AMM v2/v3/v4, v4 hooks, or ecosystem tooling) plus a public repo, FEEDBACK.md, and their developer feedback form. Simply grading Uniswap alongside other DEXes using generic indexer data likely doesn't qualify on its own.
 - **1inch** ($7,000) — narrowly scoped to building an "Aqua app" on SwapVM contracts; weak fit as a general cross-chain liquidity source.
 
-## Sequencing Plan
-
-| Window | Focus | Notes |
-|---|---|---|
-| Now → mid-August | Ethernaut Phase 1 (levels 7–12) | Untouched priority; no hackathon project code during this window |
-| Mid-August → Sep 4 | Hackathon prep (research only) | Verify data availability and sponsor fit, refresh econometrics toolkit, practice frontend patterns |
-| Sep 4 → Sep 16 | Live build during ETHOnline | Actual project code written during the event, per hackathon rules |
-
 ## Prep Checklist
 
 - [x] Confirm sponsor landscape and re-evaluate the cross-chain data source (LI.FI is not confirmed; The Graph is the current leading candidate)
@@ -62,13 +54,9 @@ The original plan assumed cross-chain liquidity data would come via LI.FI as spo
 
 ## Tech Stack
 
-- **Frontend:** Next.js, shadcn/ui (maybe)
-- **Data / analytics:** SQL, R (econometrics), on-chain data via The Graph / Dune (candidate) - still determining - depends on how much time i have
-- **Contract risk signals:** Etherscan, contract metadata - most likely
-
-## Background
-
-This project sits alongside a Phase 1 Auditor Goals roadmap (Ethernaut levels 1–12), which remains the priority through mid-August, with this hackathon serving as a build-focused proof point immediately after — part of a longer-term move toward Web3 security auditing.
+- **Frontend:** Next.js, shadcn/ui
+- **Data / analytics:** SQL, R (econometrics), on-chain data via The Graph / Dune (candidate)
+- **Contract risk signals:** Etherscan, contract metadata
 
 ## License
 
