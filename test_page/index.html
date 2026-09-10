@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeFi Pool Risk Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: '#F7F7F5',
+          ink: '#1B1F23',
+          line: '#D8D9D4',
+          muted: '#6B6F76',
+          low: '#2F7A4D',
+          moderate: '#96681A',
+          high: '#B23A34',
+        },
+        fontFamily: {
+          serif: ['"IBM Plex Serif"', 'serif'],
+          sans: ['"IBM Plex Sans"', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-paper text-ink font-sans min-h-screen">
+
+  <div class="max-w-2xl mx-auto px-6 py-12">
+
+    <header class="mb-6">
+      <h1 class="font-serif text-3xl">DeFi pool risk report</h1>
+      <p class="text-muted mt-2 text-sm">
+        Live liquidity-provider concentration, scored from on-chain data via The Graph.
+      </p>
+    </header>
+
+    <div class="flex items-center justify-between mb-8 pb-4 border-b border-line">
+      <p class="text-xs text-muted">
+        <span class="font-medium text-ink">Ethereum mainnet only.</span>
+        Other chains are not covered by this tool.
+      </p>
+      <a href="info.html" class="text-xs underline decoration-line hover:decoration-ink transition-colors">
+        Why these numbers matter
+      </a>
+    </div>
+
+    <nav class="flex flex-wrap border-b border-line mb-8" role="tablist" aria-label="Select a pool">
+      <button class="tab-btn" id="tab-uniswap" data-pool="uniswap" role="tab" aria-selected="true" aria-controls="report">Uniswap v3</button>
+      <button class="tab-btn" id="tab-curve" data-pool="curve" role="tab" aria-selected="false" aria-controls="report">Curve</button>
+      <button class="tab-btn" id="tab-balancer" data-pool="balancer" role="tab" aria-selected="false" aria-controls="report">Balancer v2</button>
+    </nav>
+
+    <main id="report" role="tabpanel" aria-labelledby="tab-uniswap" aria-live="polite" tabindex="0">
+      <!-- rendered by script.js -->
+    </main>
+
+    <footer class="mt-12 pt-6 border-t border-line text-xs text-muted">
+      Concentration data verified live against on-chain subgraphs, Sep 8 2026.
+      Cross-chain liquidity fragmentation is not yet built — see note below each report.
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

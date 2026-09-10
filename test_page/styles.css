@@ -1,0 +1,74 @@
+/* Tabular numerals everywhere numbers appear — reinforces the "measured, not decorated" feel */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tab buttons */
+.tab-btn {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  color: #6B6F76;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: #1B1F23;
+}
+
+.tab-btn[aria-selected="true"] {
+  color: #1B1F23;
+  border-bottom-color: #1B1F23;
+  font-weight: 500;
+}
+
+.tab-btn:focus-visible {
+  outline: 2px solid #1B1F23;
+  outline-offset: 2px;
+}
+
+/* Risk verdict band — the one deliberate spot of real color on the page */
+.risk-band {
+  border-left: 4px solid;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.risk-band.low {
+  border-color: #2F7A4D;
+  background: rgba(47, 122, 77, 0.06);
+}
+
+.risk-band.moderate {
+  border-color: #B8862C;
+  background: rgba(184, 134, 44, 0.07);
+}
+
+.risk-band.high {
+  border-color: #B23A34;
+  background: rgba(178, 58, 52, 0.06);
+}
+
+.risk-label.low { color: #2F7A4D; }
+.risk-label.moderate { color: #B8862C; }
+.risk-label.high { color: #B23A34; }
+
+/* Data row rules */
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #D8D9D4;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Why these numbers matter — DeFi Pool Risk Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: '#F7F7F5',
+          ink: '#1B1F23',
+          line: '#D8D9D4',
+          muted: '#6B6F76',
+          low: '#2F7A4D',
+          moderate: '#96681A',
+          high: '#B23A34',
+        },
+        fontFamily: {
+          serif: ['"IBM Plex Serif"', 'serif'],
+          sans: ['"IBM Plex Sans"', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-paper text-ink font-sans min-h-screen">
+
+  <div class="max-w-2xl mx-auto px-6 py-12">
+
+    <header class="mb-6">
+      <h1 class="font-serif text-3xl">Why these numbers matter</h1>
+      <p class="text-muted mt-2 text-sm">
+        The math behind the risk report, and why it's worth reading before you deposit.
+      </p>
+    </header>
+
+    <div class="flex items-center justify-between mb-10 pb-4 border-b border-line">
+      <p class="text-xs text-muted">
+        <span class="font-medium text-ink">Ethereum mainnet only.</span>
+        Other chains are not covered by this tool.
+      </p>
+      <a href="index.html" class="text-xs underline decoration-line hover:decoration-ink transition-colors">
+        Back to report
+      </a>
+    </div>
+
+    <section class="mb-10">
+      <h2 class="font-serif text-xl mb-3">Concentration: who really owns this pool</h2>
+      <p class="text-sm leading-relaxed mb-3">
+        A liquidity pool with a thousand small depositors behaves very
+        differently from one where a single address holds almost everything.
+        In a concentrated pool, one large withdrawal can shift the price
+        sharply, drain the pool's depth, or signal that the "market" for a
+        token is really just one or two wallets. Depositing into a pool
+        without knowing this is depositing blind.
+      </p>
+      <p class="text-sm leading-relaxed mb-3">
+        This report measures concentration using the
+        <strong>Herfindahl-Hirschman Index (HHI)</strong> — a standard
+        economics tool for measuring how concentrated ownership or market
+        share is across any group of holders. It's the sum of every
+        holder's share of the pool, squared:
+      </p>
+      <p class="font-mono text-sm bg-white border border-line rounded px-4 py-3 mb-3">
+        HHI = &Sigma; (share<sub>i</sub>)&sup2;
+      </p>
+      <p class="text-sm leading-relaxed mb-3">
+        The score always lands between 0 (perfectly spread out) and 1 (one
+        holder owns everything). <code class="font-mono text-xs">1 / HHI</code>
+        translates that into something easier to picture — an "equivalent
+        number of equal-sized holders." An HHI of 0.5, for example, behaves
+        like the pool is split between two people, even if ten addresses
+        technically hold a balance.
+      </p>
+      <p class="text-sm">
+        Further reading:
+        <a class="underline decoration-line hover:decoration-ink" href="https://en.wikipedia.org/wiki/Herfindahl%E2%80%93Hirschman_Index" target="_blank" rel="noopener">
+          Herfindahl-Hirschman Index — Wikipedia
+        </a>
+      </p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="font-serif text-xl mb-3">Fragmentation: how thin is liquidity, really</h2>
+      <p class="text-sm leading-relaxed mb-3">
+        The same trading pair often exists as separate pools on many
+        different chains — mainnet, Arbitrum, Optimism, Base, and others.
+        If nearly all the real liquidity sits on one chain and the rest are
+        thin, trading on those thinner chains costs more (worse slippage)
+        and can be far less reliable during volatile moments, even though
+        the token "exists" everywhere.
+      </p>
+      <p class="text-sm leading-relaxed mb-3">
+        This factor reuses the same HHI formula above, applied to a
+        different input: instead of scoring how liquidity splits across
+        <em>addresses</em> within one pool, it scores how liquidity splits
+        across <em>chains</em> for the same pair. A high fragmentation score
+        means most of the real depth is concentrated on one chain — worth
+        knowing before assuming a smaller chain's version of a pool is just
+        as safe to trade against.
+      </p>
+      <p class="text-sm leading-relaxed mb-3">
+        <span class="text-muted italic">This factor is not yet built into
+        the live report — see the project roadmap for status.</span>
+        The underlying price-impact math it relates to is the same
+        constant-product formula automated market makers use to price every
+        trade:
+      </p>
+      <p class="text-sm">
+        Further reading:
+        <a class="underline decoration-line hover:decoration-ink" href="https://en.wikipedia.org/wiki/Automated_market_maker" target="_blank" rel="noopener">
+          Automated market maker — Wikipedia
+        </a>
+        &middot;
+        <a class="underline decoration-line hover:decoration-ink" href="https://en.wikipedia.org/wiki/Market_liquidity" target="_blank" rel="noopener">
+          Market liquidity — Wikipedia
+        </a>
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="font-serif text-xl mb-3">In short</h2>
+      <p class="text-sm leading-relaxed mb-3">
+        Neither score tells you whether a pool is a good or bad investment
+        on its own. They tell you something narrower and more useful:
+        how exposed you'd be to a single actor's behavior, and how real
+        the liquidity actually is once you look past the total-value-locked
+        number. Both are the kind of thing worth checking before moving
+        real funds — not after.
+      </p>
+      <p class="text-xs text-muted">
+        This tool provides informational risk metrics only. It is not
+        financial advice.
+      </p>
+    </section>
+
+  </div>
+
+</body>
+</html>
