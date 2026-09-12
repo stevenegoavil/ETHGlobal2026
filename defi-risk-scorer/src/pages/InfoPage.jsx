@@ -13,8 +13,8 @@ export default function InfoPage() {
 
       <div className="flex items-center justify-between mb-10 pb-4 border-b">
         <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Ethereum mainnet only.</span>{' '}
-          Other chains are not covered by this tool.
+          <span className="font-medium text-foreground">Ethereum mainnet for LP concentration.</span>{' '}
+          Ethereum, Arbitrum, and Optimism for cross-chain fragmentation.
         </p>
         <Link
           to="/"
