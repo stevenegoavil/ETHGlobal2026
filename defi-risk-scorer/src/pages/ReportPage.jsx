@@ -1,6 +1,7 @@
 // src/pages/ReportPage.jsx
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useIsLoggedIn, DynamicWidget } from '@dynamic-labs/sdk-react-core';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +53,46 @@ const FIND_POOL_QUERY = {
   },
 };
 
-function RiskBand({ hhi, lpCount }) {
+function AIExplanation({ report, riskLabel }) {
+  const [explanation, setExplanation] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    setExplanation(null);
+    fetch('/api/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        protocol: report.protocol,
+        pair: report.pair,
+        hhi: report.hhi,
+        lpCount: report.lpCount,
+        whale: report.whale,
+        riskLabel,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.explanation) setExplanation(data.explanation);
+      })
+      .catch(() => {}) // this is an enhancement, not core functionality — fail silently
+      .finally(() => setLoading(false));
+  }, [report, riskLabel]);
+
+  if (loading) {
+    return <p className="text-xs text-muted-foreground italic mt-2">Generating AI analysis...</p>;
+  }
+  if (!explanation) return null;
+
+  return (
+    <p className="text-xs mt-2 pt-2 border-t border-current/10">
+      <span className="font-medium">AI analysis:</span> {explanation}
+    </p>
+  );
+}
+
+function RiskBand({ hhi, lpCount, report }) {
   const risk = getRiskLevel(hhi, lpCount);
   const colors = RISK_COLORS[risk.level];
 
@@ -72,9 +112,12 @@ function RiskBand({ hhi, lpCount }) {
           instantly own the entire active pool.
         </p>
       ) : (
-        <p className="text-sm mt-1">
-          This pool behaves like it's owned by about {equivalentHolders(hhi)} equal-sized people.
-        </p>
+        <>
+          <p className="text-sm mt-1">
+            This pool behaves like it's owned by about {equivalentHolders(hhi)} equal-sized people.
+          </p>
+          <AIExplanation report={report} riskLabel={risk.label} />
+        </>
       )}
     </div>
   );
@@ -90,7 +133,50 @@ function DataRow({ label, value, mono = false }) {
     </div>
   );
 }
+function FragmentationAIExplanation({ fragmentation }) {
+  const [explanation, setExplanation] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setExplanation(null);
+
+    fetch('/api/explain-fragmentation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pair: 'USDC/WETH',
+        hhi: fragmentation.hhi,
+        maxShare: Math.max(...fragmentation.breakdown.map(c => c.sharePercent)),
+        topChain: fragmentation.breakdown[0].chain,
+        chains: fragmentation.breakdown.map(c => ({
+          name: c.chain,
+          sharePercent: c.sharePercent,
+          tvlUSD: c.tvlUSD,
+        })),
+      }),
+      signal: controller.signal,
+    })
+      .then(res => res.json())
+      .then(data => { if (data.explanation) setExplanation(data.explanation); })
+      .catch(err => { if (err.name !== 'AbortError') console.error(err); })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [fragmentation]);
+
+  if (loading) {
+    return <p className="text-xs text-muted-foreground italic mt-3 pt-3 border-t">Generating AI analysis...</p>;
+  }
+  if (!explanation) return null;
+
+  return (
+    <p className="text-xs mt-3 pt-3 border-t">
+      <span className="font-medium">AI analysis:</span> {explanation}
+    </p>
+  );
+}
 function ProtocolReport({ protocol }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -207,7 +293,7 @@ function ProtocolReport({ protocol }) {
 
       {report && !loading && (
         <>
-          <RiskBand hhi={report.hhi} lpCount={report.lpCount} />
+          <RiskBand hhi={report.hhi} lpCount={report.lpCount} report={report} />
 
           <Card>
             <CardHeader>
@@ -273,40 +359,43 @@ function FragmentationSection() {
         {loading && <p className="text-sm text-muted-foreground">Loading live data...</p>}
         {error && <p className="text-sm text-red-700">{error}</p>}
 
-        {data && (
-          <>
-            <p className="text-sm mb-4">
-              HHI: <span className="font-mono">{data.hhi.toFixed(3)}</span> — the most
-              concentrated chain holds{' '}
-              <span className="font-mono">{maxShare.toFixed(1)}%</span> of this pair's
-              total tracked liquidity.
-            </p>
-            <div className="space-y-3">
-              {data.breakdown.map((c) => (
-                <div key={c.chain}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>{c.chain}</span>
-                    <span className="font-mono text-muted-foreground">
-                      {c.sharePercent.toFixed(1)}% · ${(c.tvlUSD / 1_000_000).toFixed(1)}M
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded overflow-hidden">
-                    <div
-                      className="h-full bg-foreground/70 rounded"
-                      style={{ width: `${c.sharePercent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+{data && (
+  <>
+    <p className="text-sm mb-4">
+      HHI: <span className="font-mono">{data.hhi.toFixed(3)}</span> — the most
+      concentrated chain holds{' '}
+      <span className="font-mono">{maxShare.toFixed(1)}%</span> of this pair's
+      total tracked liquidity.
+    </p>
+    <div className="space-y-3">
+      {data.breakdown.map((c) => (
+        <div key={c.chain}>
+          <div className="flex justify-between text-sm mb-1">
+            <span>{c.chain}</span>
+            <span className="font-mono text-muted-foreground">
+              {c.sharePercent.toFixed(1)}% · ${(c.tvlUSD / 1_000_000).toFixed(1)}M
+            </span>
+          </div>
+          <div className="h-2 bg-muted rounded overflow-hidden">
+            <div
+              className="h-full bg-foreground/70 rounded"
+              style={{ width: `${c.sharePercent}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+    <FragmentationAIExplanation fragmentation={data} />
+  </>
+)}
       </CardContent>
     </Card>
   );
 }
 
 export default function ReportPage() {
+  const isLoggedIn = useIsLoggedIn();
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
       <header className="mb-6">
@@ -333,50 +422,64 @@ export default function ReportPage() {
         </Link>
       </div>
 
-      <Tabs defaultValue="concentration">
-        <TabsList className="mb-6">
-          <TabsTrigger value="concentration">Concentration</TabsTrigger>
-          <TabsTrigger value="fragmentation">Fragmentation</TabsTrigger>
-        </TabsList>
+      {!isLoggedIn ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect a wallet to continue</CardTitle>
+            <CardDescription>
+              This tool requires a connected wallet to use.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DynamicWidget />
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="concentration">
+          <TabsList className="mb-6">
+            <TabsTrigger value="concentration">Concentration</TabsTrigger>
+            <TabsTrigger value="fragmentation">Fragmentation</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="concentration">
-          <Tabs defaultValue="uniswap">
-            <TabsList className="mb-6">
-              <TabsTrigger value="uniswap">Uniswap v3</TabsTrigger>
-              <TabsTrigger value="curve">Curve</TabsTrigger>
-              <TabsTrigger value="balancer">Balancer v2</TabsTrigger>
-            </TabsList>
+          <TabsContent value="concentration">
+            <Tabs defaultValue="uniswap">
+              <TabsList className="mb-6">
+                <TabsTrigger value="uniswap">Uniswap v3</TabsTrigger>
+                <TabsTrigger value="curve">Curve</TabsTrigger>
+                <TabsTrigger value="balancer">Balancer v2</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="uniswap"><ProtocolReport protocol="uniswap" /></TabsContent>
-            <TabsContent value="curve"><ProtocolReport protocol="curve" /></TabsContent>
-            <TabsContent value="balancer"><ProtocolReport protocol="balancer" /></TabsContent>
-          </Tabs>
-        </TabsContent>
+              <TabsContent value="uniswap"><ProtocolReport protocol="uniswap" /></TabsContent>
+              <TabsContent value="curve"><ProtocolReport protocol="curve" /></TabsContent>
+              <TabsContent value="balancer"><ProtocolReport protocol="balancer" /></TabsContent>
+            </Tabs>
+          </TabsContent>
 
-        <TabsContent value="fragmentation">
-          <Tabs defaultValue="uniswap">
-            <TabsList className="mb-6">
-              <TabsTrigger value="uniswap">Uniswap v3</TabsTrigger>
-              <TabsTrigger value="curve" disabled>Curve</TabsTrigger>
-              <TabsTrigger value="balancer" disabled>Balancer v2</TabsTrigger>
-            </TabsList>
+          <TabsContent value="fragmentation">
+            <Tabs defaultValue="uniswap">
+              <TabsList className="mb-6">
+                <TabsTrigger value="uniswap">Uniswap v3</TabsTrigger>
+                <TabsTrigger value="curve" disabled>Curve</TabsTrigger>
+                <TabsTrigger value="balancer" disabled>Balancer v2</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="uniswap">
-              <FragmentationSection />
-            </TabsContent>
-            <TabsContent value="curve">
-              <p className="text-sm text-muted-foreground italic">
-                Fragmentation isn't available for Curve yet — see the info page for why.
-              </p>
-            </TabsContent>
-            <TabsContent value="balancer">
-              <p className="text-sm text-muted-foreground italic">
-                Fragmentation isn't available for Balancer yet — see the info page for why.
-              </p>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-      </Tabs>
+              <TabsContent value="uniswap">
+                <FragmentationSection />
+              </TabsContent>
+              <TabsContent value="curve">
+                <p className="text-sm text-muted-foreground italic">
+                  Fragmentation isn't available for Curve yet — see the info page for why.
+                </p>
+              </TabsContent>
+              <TabsContent value="balancer">
+                <p className="text-sm text-muted-foreground italic">
+                  Fragmentation isn't available for Balancer yet — see the info page for why.
+                </p>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+        </Tabs>
+      )}
 
       <footer className="mt-12 pt-6 border-t text-xs text-muted-foreground">
         Concentration data verified live against on-chain subgraphs via The Graph.
