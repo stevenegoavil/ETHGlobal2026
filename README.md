@@ -1,119 +1,117 @@
-# DeFi Protocol Risk Scorer
+# SKNYDipping — Risk Pool
 
-A DeFi protocol risk-scoring dapp built for **ETHOnline 2026** (Sep 4–16). It
-grades a small set of real protocols/pools against each other in real time,
-combining three layers of signal: security auditing background
-(contract-level risk), econometrics (statistical risk metrics), and
-cross-chain liquidity data. The goal is a working, usable dapp — not a static
-analysis report or BI dashboard.
+A DeFi risk-scoring dapp built for **ETHOnline 2026** (Sep 4–16). It scores
+real, live pools on two independent risk factors — liquidity-provider
+concentration and cross-chain liquidity fragmentation — using on-chain data
+queried directly from **The Graph**, with a real AI-generated explanation of
+what each score actually means for someone considering depositing funds.
 
-**Status (Sep 8):** Data pipeline, formulas, and pool selection are complete
-and verified against live data. See `analysis-README.md` for the full writeup
-— pool selection rationale, data-quality bugs found and fixed, formula
-design, and real verified HHI results. Frontend build starts next.
+**Status: complete.** Live data, wallet-gated access, and a working demo
+video. Everything below reflects the finished build, not a plan.
 
-## Project Concept
+## What it does
 
-Protocols are compared within matched categories rather than across
-unrelated business types, so scores stay apples-to-apples:
+- **Concentration:** for Uniswap v3, Curve, and Balancer v2, computes the
+  Herfindahl-Hirschman Index (HHI) on real liquidity-provider balances,
+  pulled live from each protocol's subgraph. Uniswap and Balancer support
+  **any pool address** the user pastes in, not just the demo pools — Curve
+  is intentionally limited to one verified pool (see "Known limitations"
+  below for why).
+- **Fragmentation:** for the USDC/WETH pair on Uniswap v3, applies the same
+  HHI formula to per-chain TVL across Ethereum mainnet, Arbitrum, and
+  Optimism, showing how much of the pair's real liquidity sits on one chain.
+- **AI reasoning layer:** each report includes a short, genuinely
+  AI-generated sentence (via the **Google Gemini API**, called server-side)
+  explaining the practical risk implication of the computed numbers — not a
+  hand-written template.
+- **Wallet-gated:** built with **Dynamic** (`@dynamic-labs/sdk-react-core`).
+  A connected wallet is required to use the tool at all — there's no free
+  tier, by deliberate decision (see Roadmap).
+- **Live pricing:** token USD values refresh from CoinGecko rather than
+  using a stale hardcoded table, since this is meant to inform a real,
+  present-moment decision.
 
-- **Group 1 — DEXes:** Uniswap v3, Curve Finance, Balancer
+## Real results, verified against live data
 
-One pool per protocol has been selected and fully verified end-to-end
-(live query → formula → real result):
-
-| Protocol | Pool | HHI (verified) |
+| Protocol | Pool | HHI |
 |---|---|---|
-| Uniswap v3 | USDC/WETH 0.05% | 0.331 |
+| Uniswap v3 | USDC/WETH 0.05% | 0.331 (initial verification; live queries return current values, which drift with real market activity) |
 | Curve | TricryptoGHO | 0.614 |
-| Balancer v2 | GyroE pool | 1.000 |
+| Balancer v2 | GyroE pool | 1.000 (single address holds effectively the entire pool) |
 
-A lending-market group (Aave v3, Compound v3, Morpho) was considered in
-early planning but is out of scope for this build — see analysis README for
-reasoning.
+Fragmentation (USDC/WETH, Uniswap v3): **HHI 0.829** — roughly 91% of this
+pair's tracked liquidity sits on Ethereum mainnet alone.
 
-Each pool is scored on three layers:
+Full methodology, every data-quality bug found and fixed along the way, and
+the reasoning behind each pool selection: see `analysis-README.md`.
 
-| Layer | Signal | Source |
-|---|---|---|
-| Security (auditing) | Upgradeable/proxy pattern, verified, audited; oracle dependency as a risk signal | Etherscan, contract metadata |
-| Econometrics | Concentration index (HHI), rolling volatility | Live subgraph data via The Graph — **built and verified** |
-| Cross-chain liquidity | Liquidity fragmentation across chains | TBD — see Open Questions |
+## Tech stack
 
-Chainlink is not a compared entity — it's a candidate input to the security
-sub-score (oracle source quality), not a competitor being graded.
+- **Frontend:** Vite + React + shadcn/ui (Base UI primitives, Lyra preset)
+  — pivoted from an original Next.js plan once the project moved to a
+  pure client + serverless-function architecture rather than needing SSR.
+- **Backend:** Vercel serverless functions (`/api`) — the only place the
+  Graph API key and Gemini API key exist. The frontend never sees either.
+- **Data:** live GraphQL queries to The Graph's Uniswap v3, Curve Finance
+  (Messari), and Balancer V2 mainnet subgraphs, plus their Arbitrum and
+  Optimism deployments for fragmentation.
+- **Wallet auth:** Dynamic SDK.
+- **AI reasoning:** Google Gemini API, called server-side per report.
+- **Pricing:** CoinGecko public API.
 
-## Sponsor Integration — resolved
+## Known limitations (stated on purpose, not hidden)
 
-The original plan assumed cross-chain liquidity data would come via LI.FI as
-a sponsor SDK. **This assumption did not hold up**: LI.FI was not confirmed
-as an ETHOnline 2026 sponsor when checked directly against the sponsor page
-(2026-09-04). **The Graph is the confirmed, verified replacement** — not just
-a fallback pick. Live subgraphs for all three target protocols (Uniswap v3,
-Curve Finance Ethereum, Balancer V2) were queried, validated, and are
-feeding the actual econometrics layer as of tonight's commit, targeting:
+- **Curve doesn't support custom pool input.** Curve orders each pool's
+  tokens by its own on-chain coin index, which does not reliably match the
+  order its subgraph metadata lists them in — confirmed the hard way after
+  an assumed ordering produced an 18-quadrillion-dollar result during
+  testing. Automating this safely per arbitrary pool wasn't achievable in
+  the timeline, so Curve is scoped to one manually-verified pool
+  (TricryptoGHO).
+- **Fragmentation is Uniswap-only, for one pair (USDC/WETH), across three
+  chains.** Curve and Balancer appear in the UI as greyed-out tabs on
+  purpose — the idea generalizes to them, but each protocol organizes its
+  per-chain subgraphs differently, and matching "the same pool, on another
+  chain" needs the same kind of manual verification as Curve's token
+  ordering.
+- **Rolling volatility / historical HHI trend** is not built — every score
+  is a live, current-moment snapshot, not a time series.
 
-- **The Graph — Composable/Standardized Track ($5,000)** — primary target.
-  All three subgraphs confirmed Messari-standardized; one query pattern
-  spans all three protocols.
-- **The Graph — AI Tooling/Use Case Track ($5,000)** — planned, via a
-  natural-language "why this pool was flagged" layer (see
-  `analysis-README.md` → Interpreting the Score).
-- **Uniswap Foundation ($5,000)** — stretch goal, contingent on time for a
-  real Uniswap-stack integration point beyond generic indexer data.
-- **Chainlink CRE ($3,000)** — stretch goal only, separate nontrivial build.
+## Sponsor fit — The Graph
 
-Full sponsor-fit reasoning: see `protocol-selection-and-sponsor-notes.md`.
+- **Composable/Standardized Track:** primary target. Uniswap, Curve, and
+  Balancer concentration scoring all run through one shared query pattern
+  against Messari-standardized schemas — confirmed live, not assumed.
+- **AI Tooling/Use Case Track:** the Gemini-generated explanation layer
+  does real reasoning over live Graph data (not printing a raw query
+  result), which is the track's explicit bar.
 
-## Demo Format
+Full sponsor research and the LI.FI → Graph pivot reasoning:
+`protocol-selection-and-sponsor-notes.md`.
 
-A 3-minute video showing the working dapp in use: protocol selection, and a
-live score with a walked-through example (one pool flagged, one clear reason
-why — e.g. "this pool is flagged high-risk because a single address controls
-100% of liquidity"). Frontend built in Next.js with shadcn/ui components.
+## Roadmap — discussed, not built
 
-## Prep Checklist
-
-- [x] Confirm sponsor landscape and re-evaluate the cross-chain data source
-      (resolved: LI.FI dropped, The Graph confirmed and integrated)
-- [x] Verify the chosen data source's real feature set (Messari-standardized
-      subgraphs confirmed across all three protocols)
-- [x] Run test Graph queries to confirm holder concentration data is
-      actually queryable — confirmed live for all three protocols
-- [x] Pick real protocols/pools to score (Uniswap v3, Curve, Balancer v2 —
-      one pool each, verified; decided against expanding further for now,
-      see analysis README)
-- [x] Refresh econometrics toolkit: HHI concentration index built, tested,
-      and verified against live data
-- [ ] Practice Next.js + shadcn/ui component patterns for the frontend
-- [ ] Confirm ETHOnline's rules on pre-event practice code vs.
-      project-specific code
-- [x] Decide whether both protocol groups ship — decided: DEX group only
-
-## Open Questions
-
-- Rolling volatility / historical liquidity time-series — not yet built
-  (separate from the concentration/HHI work done so far); likely sourced
-  from `poolDayData`/`liquidityPoolDailySnapshot`-style fields, per protocol.
-- Does ETHOnline restrict any pre-event frontend practice, or only
-  project-specific code?
-
-## Tech Stack
-
-- **Frontend:** Next.js, shadcn/ui
-- **Data / analytics:** JavaScript (formulas + adapters), live queries via
-  The Graph, CoinGecko for live USD pricing
-- **Contract risk signals:** Etherscan, contract metadata
+- Wallet-connected-as-unlock is the honest, buildable version of a future
+  paid tier; real on-chain payment collection was deliberately scoped out.
+- Users bringing their own Graph API key (removes the backend proxy
+  requirement for their own usage, shifts Graph query volume — and
+  business — to them directly).
+- More risk factors: oracle-dependency quality, audit status,
+  upgradeable/proxy-pattern risk.
+- Expanding beyond one pool per protocol, if it can be done without
+  repeating the same data-quality issues found this week.
 
 ## Repo structure
 
-- `analysis-README.md` — full data investigation writeup: pool selection,
-  bugs found and fixed, formula design, verified results.
-- `risk-formulas.js` — HHI, slippage, per-protocol data adapters, live price
-  refresh, Curve pagination.
-- `test-live.js` — end-to-end live verification script.
-- `protocol-selection-and-sponsor-notes.md` — sponsor-track research and
-  pool grouping decisions.
+- `defi-risk-scorer/` — the real, deployed application (Vite + React +
+  serverless functions).
+- `prototype-test/` — the earlier throwaway data-verification scripts and
+  vanilla HTML/CSS/JS prototype, kept for the commit history showing the
+  investigation work behind the final build.
+- `analysis-README.md` — full data investigation: pool selection, every
+  bug found and fixed, formula design, verified results.
+- `protocol-selection-and-sponsor-notes.md` — sponsor research and pool
+  grouping decisions.
 
 ## License
 
