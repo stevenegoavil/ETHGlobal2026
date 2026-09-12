@@ -55,7 +55,7 @@ export default function InfoPage() {
         <p className="text-sm">
           Further reading:{' '}
           <a
-            className="underline text-primary hover:decoration-primary"
+            className="underline text-blue-600 hover:text-blue-700"
             href="https://en.wikipedia.org/wiki/Herfindahl%E2%80%93Hirschman_Index"
             target="_blank"
             rel="noopener noreferrer"
@@ -85,18 +85,23 @@ export default function InfoPage() {
           as safe to trade against.
         </p>
         <p className="text-sm leading-relaxed mb-3">
-          <span className="text-muted-foreground italic">
-            This factor is not yet built into the live report — see the
-            project roadmap for status.
-          </span>{' '}
-          The underlying price-impact math it relates to is the same
-          constant-product formula automated market makers use to price every
-          trade:
+          This factor is live for one pair right now:{' '}
+          <strong>USDC/WETH on Uniswap v3</strong>, compared across Ethereum
+          mainnet, Arbitrum, and Optimism — see the "Cross-chain" tab on the
+          report. Curve and Balancer show up there too, greyed out, on
+          purpose: the idea applies to any protocol, but each one organizes
+          its per-chain subgraphs differently, and finding the equivalent
+          pool for the same pair on each chain has to be verified by hand,
+          the same way each pool's token ordering does elsewhere in this
+          tool. Uniswap's deployments are the most directly comparable
+          across chains, which is why it came first. The underlying
+          price-impact math it relates to is the same constant-product
+          formula automated market makers use to price every trade:
         </p>
         <p className="text-sm">
           Further reading:{' '}
           <a
-            className="underline text-primary hover:decoration-primary"
+            className="underline text-blue-600 hover:text-blue-700"
             href="https://en.wikipedia.org/wiki/Automated_market_maker"
             target="_blank"
             rel="noopener noreferrer"
@@ -105,7 +110,7 @@ export default function InfoPage() {
           </a>{' '}
           ·{' '}
           <a
-            className="underline text-primary hover:decoration-primary"
+            className="underline text-blue-600 hover:text-blue-700"
             href="https://en.wikipedia.org/wiki/Market_liquidity"
             target="_blank"
             rel="noopener noreferrer"
